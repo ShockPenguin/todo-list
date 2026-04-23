@@ -13,30 +13,63 @@ def save_tasks(tasks):
     with open(FILE, "w") as f:
         json.dump(tasks, f, indent=2)
 
-def add_task(title):
+def add_task():
+    title = input("Task title (or 'q' to cancel): ").strip()
+    if title.lower() == 'q':
+        print("Cancelled.")
+        return
     tasks = load_tasks()
     tasks.append({"title": title, "done": False})
     save_tasks(tasks)
     print(f"Added: {title}")
 
-def list_tasks():
-    tasks = load_tasks()
+def list_tasks(tasks):
     if not tasks:
         print("No tasks yet!")
-        return
+        return False
     for i, task in enumerate(tasks):
         status = "✓" if task["done"] else "✗"
         print(f"{i + 1}. [{status}] {task['title']}")
+    return True
 
-def complete_task(index):
+def pick_task(prompt):
+    """Show tasks and prompt the user to pick one. Returns index or None if cancelled."""
     tasks = load_tasks()
-    tasks[index]["done"] = True
+    if not list_tasks(tasks):
+        return None, None
+
+    raw = input(f"{prompt} (or 'q' to cancel): ").strip()
+    if raw.lower() == 'q':
+        print("Cancelled.")
+        return None, None
+
+    if not raw.isdigit():
+        print("Invalid input, please enter a number.")
+        return None, None
+
+    i = int(raw) - 1
+    if i < 0 or i >= len(tasks):
+        print(f"Please enter a number between 1 and {len(tasks)}.")
+        return None, None
+
+    return i, tasks
+
+def complete_task():
+    i, tasks = pick_task("Task number to complete")
+    if i is None:
+        return
+    if tasks[i]["done"]:
+        print(f"Already completed: {tasks[i]['title']}")
+        return
+    tasks[i]["done"] = True
     save_tasks(tasks)
-    print(f"Completed: {tasks[index]['title']}")
+    print(f"Completed: {tasks[i]['title']}")
 
-def delete_task(index):
-    tasks = load_tasks()
-    removed = tasks.pop(index)
+def delete_task():
+    i, tasks = pick_task("Task number to delete")
+    if i is None:
+        return
+    removed = tasks.pop(i)
     save_tasks(tasks)
     print(f"Deleted: {removed['title']}")
 
@@ -52,18 +85,14 @@ def main():
         choice = input("\nChoice: ").strip()
 
         if choice == "1":
-            list_tasks()
+            tasks = load_tasks()
+            list_tasks(tasks)
         elif choice == "2":
-            title = input("Task title: ").strip()
-            add_task(title)
+            add_task()
         elif choice == "3":
-            list_tasks()
-            i = int(input("Task number to complete: ")) - 1
-            complete_task(i)
+            complete_task()
         elif choice == "4":
-            list_tasks()
-            i = int(input("Task number to delete: ")) - 1
-            delete_task(i)
+            delete_task()
         elif choice == "5":
             break
         else:
@@ -71,3 +100,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
